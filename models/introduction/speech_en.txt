@@ -1,0 +1,151 @@
+___ slide 1
+
+Hello everyone. Today, we are going to talk about LLMs.
+
+___ slide 2
+
+Here is our battle plan:
+- We'll talk about what an LLM actually is and how it works.
+- We'll look at the common problems we face with them, why they happen, and how to fix them.
+- We'll navigate the "Model Zoo" and figure out how to choose the right one.
+- We'll try to cram a giant model into a "potato" (fitting the unfittable).
+- And finally, we'll get our hands dirty and start using these beasts.
+
+--- slide 3
+
+So, what is an LLM at its core? It's actually very simple. You, as the user, feed some data into this monster, it processes it, and spits out a list of tokens along with their probabilities. Based on the model's settings, a token is selected from this list, and the cycle repeats until it hits a stop word. Or, you know, until we hit a limit, like running out of context.
+
+All these tokens, and the "knowledge" of which tokens to output, come purely from the model's training. Because of this, an older model might confidently swear to you that nothing beats an Intel Pentium. It's also crucial to note that the model does not learn anything new while you are chatting with it. There are mechanisms to make a model smarter for your specific needs, but we'll save that for the next episode.
+
+Currently, the most popular architecture for LLMs is the Transformer.
+
+--- slide 4-5
+
+So, what exactly are Transformers?
+
+It is a specific neural network architecture. Its main secret weapon is the Attention mechanism. Through this mechanism, the model maps out the relationships between words to understand how important certain words are for understanding other words.
+
+For example, take the sentence: "The bank closed because it went bankrupt". The model understands that "it" refers to the "bank," so it knows the bank closed down, not some random person. In short, the Transformer builds connections across all the words, grasping the actual context. Older architectures, on the other hand, had a habit of "forgetting" the beginning of a sentence by the time they reached the end.
+
+--- slide 6
+
+Moving on. Let's talk about context, or the Context Window.
+
+Essentially, this is the LLM's short-term memory. The size of the context determines how long the model will remember what you just typed to it. Obviously, we'd love to give it the context of the entire world, but nobody has that kind of resources.
+
+The larger the context, the more expensive the model becomes to use—both in terms of memory and compute. Why? Because every single new message in a chat includes all the previous messages, including the model's own answers.
+
+However, massive context windows have their downsides. Models, much like people, can get lazy; when overwhelmed with details, they tend to oversimplify things. In fact, a 2023 study found that models perform best when the crucial information is placed at the very beginning or the very end of the context. This is known in the industry as the "Lost in the middle" principle.
+
+--- slide 7
+
+Now for the fun part. Why does the model sometimes feed me absolute garbage?
+
+There are a few reasons for this. First off, an LLM isn't a magical oracle that knows everything. It's literally just a bunch of math hiding inside a computer, generating probabilities to form an answer.
+
+Aside from the inherent randomness, the model is trained on massive dumps of data that might be outdated, entirely contradictory, or pure fiction. Furthermore, your own context (the prompt or the chat history) might contain conflicting facts (remember, every prompt glues your new message to everything you said before).
+
+The Transformers themselves aren't flawless either; the Attention mechanism can simply break down if there is an overload of information in the context.
+
+--- slide 8
+
+Even though models can be "dumb" and often contain outdated info, we can help them out. There are a few paths we can take:
+- The most obvious solution is to just use a different model.
+- If we can't find a better one, we can fine-tune a model. But beware, this will cost a pretty penny, because you'll need a ton of data and some serious computational hardware.
+- The cheapest option—and our ultimate savior—is RAG.
+
+--- slide 9
+
+RAG isn't black magic; it's simply a mechanism for injecting additional, up-to-date information right into the context. A typical RAG setup consists of a program that takes the user's input, converts it into a query for an external database, grabs the relevant data, and slips it into the prompt for the LLM.
+
+However, building full-fledged RAG systems still requires time and resources. Therefore, the absolute "cheapest" RAG system is us. We can act as a biological RAG by manually copy-pasting the necessary information straight into the context window.
+
+--- slide 10-11
+
+So, how do I actually pick the right model for my task?
+
+There is no one-size-fits-all answer. Everyone writes code differently, and everyone has their own idea of what's ideal. But there are some basic ground rules.
+
+You need to look at two main things: the parameter count and the maximum context capacity. The more complex your task, the more parameters the model likely needs, and the bigger the context window should be to hold all of its "reasoning".
+
+But keep in mind, parameter count isn't everything. The training data plays a massive role; a giant model with bad data can easily be "dumber" than a tiny, well-trained "mouse" model.
+
+Here is a rough cheat sheet for matching task types to model sizes:
+1. Getter/Setter boilerplate: Tiny models with just a few billion parameters are perfectly fine.
+2. Pagination logic: You might need something bigger, around 10 billion parameters or more.
+3. Writing an HTTP server from a spec: Go for larger models (over 30B), because the model has to keep track of a lot of moving parts like endpoints and status codes.
+4. Debugging a data race: You will need advanced models that can "reason". These models can easily exceed 100 billion parameters.
+
+Long story short: the simpler the task, the smaller the model you can get away with using. You just have to test them and see what works.
+
+--- slide 12
+
+Models also have other characteristics, usually conveniently highlighted as tags in their names. Here are the most common "Pokemon" you'll encounter:
+
+- instruct: These models are fine-tuned to follow instructions and commands. While base models need detailed prompts and examples, instruct models just do the job you tell them to do.
+- qat (Quantization-Aware Training): These are models trained specifically to handle quantization. We'll talk about quantization in a second, but basically, it's shrinking the model's footprint while keeping the parameter count the same.
+- A{digit}B (Mixture of Experts): This means the model is split into several sub-networks, each acting as an expert for a specific type of data. The number shows the active parameters. For example, a model might have 80 billion parameters overall, but only use 3 billion at any one time. This saves resources because the whole network isn't firing at once, though the entire model still needs to be loaded into memory.
+- SOTA (State-of-the-Art): This means the model achieves the highest performance metrics for specific tasks. Just remember to double-check this, because models lose their SOTA crown pretty fast these days.
+- thinking: As the description implies, these models have a built-in reasoning mechanism. They are trained to break down your prompt into sub-tasks and execute them. In other words, they natively use Chain-of-Thought or Tree-of-Thought prompting, which we'll cover in a future talk.
+- tools / tooling: These models are trained to use external tools. This means you can hook them up to agents that provide access to APIs and functions. We'll dive into this later, too.
+- embedding: These models are strictly for translating text into mathematical vectors. You use these for RAG systems—building knowledge bases and searching through them based on the model's output.
+
+--- slide 13
+
+Let's circle back to Quantization. What is it?
+
+Quantization is the process of reducing the precision of a digital signal. Roughly speaking, it's converting weights from a 16-bit float down to an 8-bit or 4-bit integer. This means the model requires fewer resources (including compute) and runs significantly faster.
+
+However, this compression can lead to model degradation. To cram a massive model into your hardware without turning it into an idiot, it's best to use models that were trained with this compression in mind—those qat models we talked about earlier.
+
+--- slide 14
+
+So, you found a model that fits your hardware, but its answers feel weird. Maybe it repeats words constantly, or it sounds too dry, or way too "creative". This is where we tweak the parameters to find the sweet spot. Let's look at the main ones:
+
+- Temperature: This is essentially the model's creativity dial. It acts as a multiplier for the sampling pool of the next token. Cranking up the temperature flattens the probability distribution, making less likely tokens more possible.
+- Top-p: This restricts the pool of generated tokens based on cumulative probability. It takes the top n variants until their combined probability hits the Top-p threshold. A lower value means fewer tokens make the cut (only the highly probable ones). The difference? Temperature alters the probabilities, while Top-p shrinks the pool. Pro tip: It's highly recommended not to tweak both at the same time.
+- Top-k: This limits the token pool by a hard, absolute number, sorted by descending probability. So, while Top-p limits the pool by math, Top-k limits it by headcount.
+- Repetition Penalty: Exactly what it sounds like—a penalty for repeating phrases. It lowers the probability of tokens that have already been used. This stops the model from looping the same sentence over and over. The more a token repeats, the harsher the penalty gets, effectively reducing repetitive output.
+- Presence Penalty: Similar to Repetition Penalty, but it applies a flat penalty the moment a token is used once, regardless of frequency. This forces the model to constantly generate new, unused words.
+
+--- slide 15-18
+
+Let's look at a quick example of Temperature in action using the Qwen3.5 0.8B model. The prompt: "If frog can jump on one step of the ladder. how many jumps it need to climb on 10 step ladder? tell in one sentence".
+- At Temperature 0.1, we got a very cold, precise, robotic answer.
+- At Temperature 1.0, we got a similar answer, but it sounded much more natural and human.
+- At Temperature 2.0, we got absolute gibberish. The model started inventing new facts and basically went off to solve its own existential crises.
+
+--- slide 19
+
+Let's get practical. How do we actually run this stuff offline, on our own machines, and entirely for free?
+
+There are plenty of tools out there, but the most popular are Ollama and LM Studio.
+
+LM Studio is very user-friendly with a sleek GUI. It makes tweaking all those parameters we just discussed incredibly easy. It has a built-in model browser so you can search repositories like Hugging Face directly, and best of all, it tells you upfront if a model will actually fit on your hardware.
+
+Ollama is incredibly widespread and integrates beautifully with tons of other developer tools. However, configuring models is a bit more complex, and it won't warn you if your potato PC is about to catch fire trying to run a specific model.
+
+--- slide 20
+
+While LM Studio has its built-in browser, to find models for Ollama you usually search via ollama.com/search or browse huggingface.co/models.
+
+--- slide 21
+
+So, the ultimate question remains: how do I know if my hardware can handle it?
+
+There are great tools for this:
+- Hugging Face has built-in VRAM calculators where you can input your specs and filter runable models.
+- LM Studio does this automatically in its browser.
+- There are CLI tools like llm-checker and llmfit that filter models specifically for your rig.
+
+If you like doing math, you can calculate it manually: multiply the number of parameters by the parameter size (usually listed on the model page) to find out how much VRAM you'll need. For instance, a 7B parameter model in fp16 will eat up roughly 13 GB of VRAM.
+
+Calculating context size is a bit trickier because it depends on the layer count, whether it uses Grouped Query Attention, and other architecture details. But as a rough rule of thumb for modern models: 8k context takes ~0.5 GB, 32k takes ~2 GB, and 128k will eat about 8.5 GB. Honestly, just use the calculators or test it out to be sure. Modern tools even allow you to quantize the context itself, just like the model weights, but we'll tackle that topic later.
+
+--- slide 22
+
+Thank you for your time.
+
+My parting advice: start by practicing on simple tasks, and once you catch the wave, move on to the complex stuff. This way, you'll actually understand what to expect and how to use an LLM as a powerful tool, rather than dealing with a stubborn intern confidently writing absolute gibberish.
+
+I would love your feedback! If you find the time to play around with these models locally, please share your experiences, and more importantly, the problems you ran into.
