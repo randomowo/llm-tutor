@@ -1,0 +1,142 @@
+--- slide 1
+
+Hello everyone! Today we will continue diving into the topic of AI, and our main star today is AI agents.
+
+--- slide 2
+
+What exactly we will talk about:
+* What an AI agent is and how it differs from a regular LLM
+* What tooling is and why we need MCP
+* How AI agents think (let's look under the hood)
+* Which tasks are worth delegating and which ones are too early to hand over
+* Best practices and common mistakes to ensure the agent becomes your helper, not a saboteur
+
+--- slide 3
+
+Let's start with the basics. Essentially, it is still the same LLM, to which "hands" (tooling) were attached so it could
+interact with the outside world, and "legs" (an execution loop) so it could be sent off to do work for us. AI Agent =
+LLM + Tooling + Execution Loop. The most mainstream, yet accurate example is J.A.R.V.I.S. from Iron Man.
+
+--- slide 4
+
+Remember the scene from the third movie where Tony Stark asks him to investigate a crime scene? J.A.R.V.I.S. doesn't
+just generate text. He digs into databases, cross-references information, draws holograms, and even plots a "flight"
+plan. In other words, an AI agent works like this: it receives a prompt -> breaks it down into steps -> starts running
+in a loop using tools (like a database) -> and forms a result.
+
+--- slide 5
+
+How does the agent know it has "hands"? It's very simple: information abou  the available tools is placed in the system
+prompt. It contains a sort of instruction manual for the tool: the function's name, what it does, and what arguments it
+accepts in what format.
+
+The lifecycle of tooling looks like this:
+
+1. You set a task (for example, "find the bug in this class").
+2. The LLM looks at the task, realizes it lacks context, but sees a "code_search" tool in the system prompt.
+3. The model generates a response in JSON format, saying: "I want to call this specific function with these specific
+parameters."
+4. The agent parses this response and triggers the actual function in your code or script.
+5. The function's result is returned back to the LLM. And here a problem arises.
+
+If everyone writes their own tooling with custom formats and hacky workarounds, chaos will ensue. To prevent our "hands"
+from growing out of the wrong places (so to speak), the Model Context Protocol (MCP) enters the stage. It introduces
+unified rules for communication between the AI agent and the tool. Roughly speaking, just as HTTP standardized
+communication between a client and a server on the web, MCP brings order to the wild west of AI tools.
+
+--- slide 6
+
+Okay, we have the tools. But how do we get the agent to solve multi-step puzzles on its own? It needs a behavioral
+algorithm. And the most popular framework for this is called ReAct. And before the frontend developers tense up and
+start typing npm install — breathe out. We aren't going to rewrite the backend into components. Here, ReAct stands for
+Reason-and-Act.
+
+We program the LLM for step-by-step thinking in a loop:
+
+1. You give the agent a task.
+2. Reason: The agent analyzes the prompt, forms a plan, and decides which tool is needed right now. 3. Act: The agent
+calls the tooling.
+4. It gets the result, analyzes it, and... returns to step 2. And so it goes in a loop until the model decides the
+answer is ready.
+
+Reason -> Act -> Check -> Repeat.
+
+--- slide 7
+
+We have a smart J.A.R.V.I.S. What should we assign him? Deploy to prod on a Friday evening right away? Probably a bad
+idea.
+
+* Fully delegate: Boilerplate code, pattern-based tests (show an example — ask for 10 similar ones), refactoring,
+documentation, and code search.
+
+* Do together (Pair Programming): Debugging, optimization, and API design. Let the agent draft 3 options, and you, as
+the Senior, pick the best one.
+
+* Do yourself (Without an agent): Architecture, dealing with murky business requirements, and critical changes.
+
+The golden rule: if a task requires a deep understanding of the business context and you yourself don't know what to do
+— the agent won't save you. Come up with the solution in your head first, then implement it using the agent's hands.
+
+--- slide 8
+
+The choice of model is the same as always. For large tasks requiring "deep thought," we take heavyweight models
+(preferably with a thinking function). For clear actions and handling routine tasks, we use instruct models.
+Additionally, the more complex the task, the wider the context window needs to be.
+
+--- slide 9
+
+To make the agent work for you, and not the other way around, follow these rules:
+
+Prepare information before sending it into the context.
+
+It's best to use English, as most models are trained on English data, and consequently, they "think" better in it. Don't
+dump all the documentation at once; break it into chunks and feed it iteratively, providing only what's necessary for
+the specific task. For large volumes of information, structure it using formatting like Markdown. You can also create
+anchors using XML tags to highlight important information or to link a large amount of data into a single logical block.
+
+Don't expect a one-shot miracle solution.
+
+Decompose large tasks into smaller, verifiable ones. Iterate on the solution; for example, ask it to write the code
+first, and then, in the next prompt, ask it to add tests for it—not everything all at once. Avoid massive changes in a
+single go, and make commits more often. And most importantly—force the agent to check itself (by running linters and
+tests), and personally verify the results too.
+
+Don't bloat the session (chat).
+
+Create a new session for a new, unrelated task. Don't hoard history, otherwise it will turn into a messy soup that
+causes the model to hallucinate. If solving a task drags on and you're running out of context, summarize the session
+(some agents have built-in tools for this) and use that to start a new session. This way, the agent won't lose context,
+and you can pick up right where you left off. If the agent gets stuck in a loop, you don't need to wait for it to
+finish. Boldly kill the loop and start over. And last but not least: don't turn on all the tools at once. More tools
+mean more noise. Enable only what is needed right here and right now.
+
+--- slide 10
+
+And finally, let's talk about the zoo out there. How and where do you get an AI agent? There's a metric ton of them, but
+I'll mention just a few.
+
+- opencode: an open-source agent that supports a ton of providers, including local Ollama.
+
+- claude code: the most popular agent from Anthropic. It can also be configured to work with Ollama.
+
+- ollama launch: an Ollama command that lets you spin up various agents, like the aforementioned Claude Code configured
+for Ollama.
+
+- Built-in IDE agents.
+
+Many modern IDEs have their own agent or the ability to work with an external one, like Claude Code.
+This utilizes the Agent Client Protocol (ACP).
+
+--- slide 11
+
+Thank you for your attention!
+
+I'll repeat a thought from my last talk: practice on guinea pigs... I mean, on simple tasks. Once you catch the wave,
+move on to the complex ones.
+
+That way, you'll understand how to use the agent for good, rather than treating it like a stubborn intern who
+confidently writes absolute nonsense.
+
+The main thing is—don't forget to solve tasks without the agent sometimes, otherwise we'll all forget how to write code!
+We'll talk about advanced stuff (prompt engineering, multi-agents) next time. I would love to hear your feedback! Play
+around with agents, break them, and bring your pain points to me—we'll dissect them in the next parts.
